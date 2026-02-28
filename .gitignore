@@ -4,3 +4,5 @@ _check.js
 ~$*
 Thumbs.db
 .DS_Store
+.claude/
+.wrangler/

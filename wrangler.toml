@@ -1,0 +1,7 @@
+name = "inzoi-catalog"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "./"
+
+[[kv_namespaces]]
+binding = "POSMAP_KV"
+id = "e4fa4143bb6d4b30b05eff1d43169177"

@@ -1,0 +1,6 @@
+_prev_data.json
+_check.js
+*.tmp
+~$*
+Thumbs.db
+.DS_Store

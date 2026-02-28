@@ -1,7 +1,7 @@
 """
 inZOI Object Catalog Generator
 ===============================
-엑셀(object.xlsx)에서 오브젝트 데이터를 읽어 HTML 카탈로그를 생성/업데이트합니다.
+엑셀(object.xlsx)에서 오브젝트 데이터를 읽어 data/objects.json을 생성/업데이트합니다.
 
 사용법:
   python generate_catalog.py
@@ -13,7 +13,10 @@ inZOI Object Catalog Generator
   D:/inzoiObjectList/
     ├── generate_catalog.py    (이 스크립트)
     ├── object.xlsx            (원본 데이터)
-    ├── inzoi_catalog.html     (생성될 카탈로그)
+    ├── inzoi_catalog.html     (카탈로그 HTML)
+    ├── data/
+    │   ├── objects.json       (오브젝트 데이터, 이 스크립트가 생성)
+    │   └── meta.json          (카테고리/필터/태그 메타데이터)
     ├── _prev_data.json        (변경 추적용, 자동 생성)
     └── img/
         └── *.png              (오브젝트 아이콘들)
@@ -29,12 +32,9 @@ from pathlib import Path
 # === 설정 ===
 SCRIPT_DIR = Path(__file__).parent
 EXCEL_FILE = SCRIPT_DIR / "object.xlsx"
-HTML_FILE = SCRIPT_DIR / "inzoi_catalog.html"
+OBJECTS_JSON = SCRIPT_DIR / "data" / "objects.json"
 PREV_DATA_FILE = SCRIPT_DIR / "_prev_data.json"
 IMG_DIR = SCRIPT_DIR / "img"
-
-# JSON 데이터가 삽입될 라인의 시작 패턴
-DATA_MARKER = "const ALL_DATA = "
 
 
 def extract_objects_from_excel(excel_path):
@@ -142,31 +142,15 @@ def compare_data(new_items, prev_file):
             print(f"\n   ✅ 모든 오브젝트의 이미지 파일이 존재합니다")
 
 
-def update_html(items, html_path):
-    """HTML 파일의 JSON 데이터 부분만 교체합니다."""
-    print(f"\n[3/4] HTML 카탈로그 업데이트 중...")
+def update_objects_json(items, json_path):
+    """data/objects.json 파일에 오브젝트 데이터를 씁니다."""
+    print(f"\n[3/4] objects.json 업데이트 중...")
+    json_path.parent.mkdir(parents=True, exist_ok=True)
     compact_json = json.dumps(items, ensure_ascii=False, separators=(",", ":"))
-
-    if html_path.exists():
-        with open(html_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-
-        updated = False
-        for i, line in enumerate(lines):
-            if line.strip().startswith(DATA_MARKER):
-                lines[i] = f"{DATA_MARKER}{compact_json};\n"
-                updated = True
-                break
-
-        if updated:
-            with open(html_path, "w", encoding="utf-8") as f:
-                f.writelines(lines)
-            print(f"   → 기존 HTML 업데이트 완료: {html_path}")
-            return
-
-    print(f"   ⚠️  HTML 파일이 없거나 데이터 마커를 찾을 수 없습니다")
-    print(f"   → inzoi_catalog.html 파일이 같은 폴더에 있는지 확인하세요")
-    sys.exit(1)
+    with open(json_path, "w", encoding="utf-8") as f:
+        f.write(compact_json)
+    size_kb = json_path.stat().st_size / 1024
+    print(f"   → 저장 완료: {json_path} ({size_kb:.1f} KB)")
 
 
 def save_current_data(items, prev_file):
@@ -187,19 +171,14 @@ def main():
         print(f"\n❌ 엑셀 파일을 찾을 수 없습니다: {EXCEL_FILE}")
         sys.exit(1)
 
-    if not HTML_FILE.exists():
-        print(f"\n❌ HTML 템플릿 파일을 찾을 수 없습니다: {HTML_FILE}")
-        print(f"   inzoi_catalog.html 파일을 같은 폴더에 넣어주세요")
-        sys.exit(1)
-
     items = extract_objects_from_excel(EXCEL_FILE)
     compare_data(items, PREV_DATA_FILE)
-    update_html(items, HTML_FILE)
+    update_objects_json(items, OBJECTS_JSON)
     save_current_data(items, PREV_DATA_FILE)
 
     print(f"\n{'=' * 50}")
-    print(f"  ✅ 완료! 브라우저에서 열어보세요:")
-    print(f"  {HTML_FILE}")
+    print(f"  ✅ 완료! data/objects.json 업데이트됨")
+    print(f"  브라우저에서 HTTP 서버로 확인하세요")
     print(f"{'=' * 50}")
 
 
